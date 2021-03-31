@@ -8,7 +8,7 @@ workflows:
       - name: Prepare summary file
         script: echo "timestamp = $(date -u '+%Y-%m-%dT%TZ')" >> $HOME/summary.toml
       - name: Download package
-        script: git clone --depth 1 --branch flutter_plugin_android_lifecycle-v2.0.0 https://github.com/flutter/plugins
+        script: git clone --depth 1 --branch flutter_plugin_android_lifecycle-v2.0.1 https://github.com/flutter/plugins
       - name: Install dependencies
         script: |
           cd plugins/packages/flutter_plugin_android_lifecycle
