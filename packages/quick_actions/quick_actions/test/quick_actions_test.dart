@@ -6,9 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:quick_actions/quick_actions.dart';
-import 'package:quick_actions_platform_interface/platform_interface/quick_actions_platform.dart';
 import 'package:quick_actions_platform_interface/quick_actions_platform_interface.dart';
-import 'package:quick_actions_platform_interface/types/shortcut_item.dart';
 
 void main() {
   group('$QuickActions', () {
@@ -16,27 +14,33 @@ void main() {
       QuickActionsPlatform.instance = MockQuickActionsPlatform();
     });
 
+    test('constructor() should return valid QuickActions instance', () {
+      const QuickActions quickActions = QuickActions();
+      expect(quickActions, isNotNull);
+    });
+
     test('initialize() PlatformInterface', () async {
-      QuickActions quickActions = QuickActions();
-      QuickActionHandler handler = (type) {};
+      const QuickActions quickActions = QuickActions();
+      void handler(String type) {}
 
       await quickActions.initialize(handler);
       verify(QuickActionsPlatform.instance.initialize(handler)).called(1);
     });
 
     test('setShortcutItems() PlatformInterface', () {
-      QuickActions quickActions = QuickActions();
-      QuickActionHandler handler = (type) {};
+      const QuickActions quickActions = QuickActions();
+      void handler(String type) {}
       quickActions.initialize(handler);
-      quickActions.setShortcutItems([]);
+      quickActions.setShortcutItems(<ShortcutItem>[]);
 
       verify(QuickActionsPlatform.instance.initialize(handler)).called(1);
-      verify(QuickActionsPlatform.instance.setShortcutItems([])).called(1);
+      verify(QuickActionsPlatform.instance.setShortcutItems(<ShortcutItem>[]))
+          .called(1);
     });
 
     test('clearShortcutItems() PlatformInterface', () {
-      QuickActions quickActions = QuickActions();
-      QuickActionHandler handler = (type) {};
+      const QuickActions quickActions = QuickActions();
+      void handler(String type) {}
 
       quickActions.initialize(handler);
       quickActions.clearShortcutItems();
@@ -52,15 +56,15 @@ class MockQuickActionsPlatform extends Mock
     implements QuickActionsPlatform {
   @override
   Future<void> clearShortcutItems() async =>
-      super.noSuchMethod(Invocation.method(#clearShortcutItems, []));
+      super.noSuchMethod(Invocation.method(#clearShortcutItems, <Object?>[]));
 
   @override
   Future<void> initialize(QuickActionHandler? handler) async =>
-      super.noSuchMethod(Invocation.method(#initialize, [handler]));
+      super.noSuchMethod(Invocation.method(#initialize, <Object?>[handler]));
 
   @override
-  Future<void> setShortcutItems(List<ShortcutItem>? items) async =>
-      super.noSuchMethod(Invocation.method(#setShortcutItems, [items]));
+  Future<void> setShortcutItems(List<ShortcutItem>? items) async => super
+      .noSuchMethod(Invocation.method(#setShortcutItems, <Object?>[items]));
 }
 
 class MockQuickActions extends QuickActions {}

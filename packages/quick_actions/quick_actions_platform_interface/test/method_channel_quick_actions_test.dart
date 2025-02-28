@@ -13,13 +13,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('$MethodChannelQuickActions', () {
-    MethodChannelQuickActions quickActions = MethodChannelQuickActions();
+    final MethodChannelQuickActions quickActions = MethodChannelQuickActions();
 
     final List<MethodCall> log = <MethodCall>[];
 
     setUp(() {
-      quickActions.channel
-          .setMockMethodCallHandler((MethodCall methodCall) async {
+      _ambiguate(TestDefaultBinaryMessengerBinding.instance)!
+          .defaultBinaryMessenger
+          .setMockMethodCallHandler(quickActions.channel,
+              (MethodCall methodCall) async {
         log.add(methodCall);
         return '';
       });
@@ -29,9 +31,7 @@ void main() {
 
     group('#initialize', () {
       test('passes getLaunchAction on launch method', () {
-        quickActions.initialize((type) {
-          'launch';
-        });
+        quickActions.initialize((String type) {});
 
         expect(
           log,
@@ -59,19 +59,18 @@ void main() {
 
     group('#setShortCutItems', () {
       test('passes shortcutItem through channel', () {
-        quickActions.initialize((type) {
-          'launch';
-        });
-        quickActions.setShortcutItems([
-          ShortcutItem(type: 'test', localizedTitle: 'title', icon: 'icon.svg')
+        quickActions.initialize((String type) {});
+        quickActions.setShortcutItems(<ShortcutItem>[
+          const ShortcutItem(
+              type: 'test', localizedTitle: 'title', icon: 'icon.svg')
         ]);
 
         expect(
           log,
           <Matcher>[
             isMethodCall('getLaunchAction', arguments: null),
-            isMethodCall('setShortcutItems', arguments: [
-              {
+            isMethodCall('setShortcutItems', arguments: <Map<String, String>>[
+              <String, String>{
                 'type': 'test',
                 'localizedTitle': 'title',
                 'icon': 'icon.svg',
@@ -111,9 +110,7 @@ void main() {
 
     group('#clearShortCutItems', () {
       test('send clearShortcutItems through channel', () {
-        quickActions.initialize((type) {
-          'launch';
-        });
+        quickActions.initialize((String type) {});
         quickActions.clearShortcutItems();
 
         expect(
@@ -153,3 +150,9 @@ void main() {
     });
   });
 }
+
+/// This allows a value of type T or T? to be treated as a value of type T?.
+///
+/// We use this so that APIs that have become non-nullable can still be used
+/// with `!` and `?` on the stable branch.
+T? _ambiguate<T>(T? value) => value;

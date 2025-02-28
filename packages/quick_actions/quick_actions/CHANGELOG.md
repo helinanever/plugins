@@ -1,10 +1,78 @@
+## NEXT
+
+* Updates minimum Flutter version to 3.0.
+
+## 1.0.1
+
+* Updates implementaion package versions to current versions.
+
+## 1.0.0
+
+* Updates version to 1.0 to reflect current status.
+* Updates minimum Flutter version to 2.10.
+* Updates README to document that on Android, icons may need to be explicitly
+  marked as used in the Android project for release builds.
+* Minor fixes for new analysis options.
+
+## 0.6.0+11
+
+* Removes unnecessary imports.
+* Updates minimum Flutter version to 2.8.
+* Adds OS version support information to README.
+* Fixes library_private_types_in_public_api, sort_child_properties_last and use_key_in_widget_constructors
+  lint warnings.
+
+## 0.6.0+10
+
+* Moves Android and iOS implementations to federated packages.
+
+## 0.6.0+9
+
+* Updates Android compileSdkVersion to 31.
+* Updates code for analyzer changes.
+* Removes dependency on `meta`.
+
+## 0.6.0+8
+
+* Updates example app Android compileSdkVersion to 31.
+* Moves method call to background thread to fix CI failure.
+
+## 0.6.0+7
+
+* Update minimum Flutter SDK to 2.5 and iOS deployment target to 9.0.
+
+## 0.6.0+6
+
+* Updated Android lint settings.
+* Fix repository link in pubspec.yaml.
+
+## 0.6.0+5
+
+* Support only calling initialize once.
+
+## 0.6.0+4
+
+* Remove references to the Android V1 embedding.
+
+## 0.6.0+3
+
+* Added a `const` constructor for the `QuickActions` class, so the plugin will behave as documented in the  sample code mentioned in the [README.md](https://github.com/flutter/plugins/blob/59e16a556e273c2d69189b2dcdfa92d101ea6408/packages/quick_actions/quick_actions/README.md).
+
+## 0.6.0+2
+
+* Migrate maven repository from jcenter to mavenCentral.
+
+## 0.6.0+1
+
+* Correctly handle iOS Application lifecycle events on cold start of the App.
+
 ## 0.6.0
 
 * Migrate to federated architecture.
 
 ## 0.5.0+1
 
-* Updated example app implementation. 
+* Updated example app implementation.
 
 ## 0.5.0
 

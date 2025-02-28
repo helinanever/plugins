@@ -4,10 +4,13 @@
 
 import 'package:flutter/material.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 /// Example app for Espresso plugin.
 class MyApp extends StatelessWidget {
+  /// Default Constructor
+  const MyApp({Key? key}) : super(key: key);
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -25,13 +28,13 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: _MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const _MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class _MyHomePage extends StatefulWidget {
-  _MyHomePage({Key? key, required this.title}) : super(key: key);
+  const _MyHomePage({Key? key, required this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -45,7 +48,7 @@ class _MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<_MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<_MyHomePage> {
@@ -98,7 +101,7 @@ class _MyHomePageState extends State<_MyHomePage> {
           children: <Widget>[
             Text(
               'Button tapped $_counter time${_counter == 1 ? '' : 's'}.',
-              key: ValueKey('CountText'),
+              key: const ValueKey<String>('CountText'),
             ),
           ],
         ),
@@ -106,7 +109,7 @@ class _MyHomePageState extends State<_MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

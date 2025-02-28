@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(egarciad): Remove once Flutter driver is migrated to null safety.
-// @dart = 2.9
-
 import 'dart:async';
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:test/test.dart';
@@ -15,8 +12,8 @@ Future<void> main() async {
     await driver.close();
   });
 
-  //TODO(cyanglaz): Use TabBar tabs to navigate between pages after https://github.com/flutter/flutter/issues/16991 is fixed.
-  //TODO(cyanglaz): Un-skip the test after https://github.com/flutter/flutter/issues/43012 is fixed
+  // TODO(cyanglaz): Use TabBar tabs to navigate between pages after https://github.com/flutter/flutter/issues/16991 is fixed.
+  // TODO(cyanglaz): Un-skip the test after https://github.com/flutter/flutter/issues/43012 is fixed
   test('Push a page contains video and pop back, do not crash.', () async {
     final SerializableFinder pushTab = find.byValueKey('push_tab');
     await driver.waitFor(pushTab);

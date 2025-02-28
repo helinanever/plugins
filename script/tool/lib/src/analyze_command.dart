@@ -5,92 +5,140 @@
 import 'dart:async';
 
 import 'package:file/file.dart';
-import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart';
+import 'package:yaml/yaml.dart';
 
-import 'common.dart';
+import 'common/core.dart';
+import 'common/package_looping_command.dart';
+import 'common/process_runner.dart';
+import 'common/repository_package.dart';
 
-class AnalyzeCommand extends PluginCommand {
+/// A command to run Dart analysis on packages.
+class AnalyzeCommand extends PackageLoopingCommand {
+  /// Creates a analysis command instance.
   AnalyzeCommand(
-    Directory packagesDir,
-    FileSystem fileSystem, {
+    Directory packagesDir, {
     ProcessRunner processRunner = const ProcessRunner(),
-  }) : super(packagesDir, fileSystem, processRunner: processRunner) {
+    Platform platform = const LocalPlatform(),
+  }) : super(packagesDir, processRunner: processRunner, platform: platform) {
     argParser.addMultiOption(_customAnalysisFlag,
         help:
-            'Directories (comma seperated) that are allowed to have their own analysis options.',
+            'Directories (comma separated) that are allowed to have their own '
+            'analysis options.\n\n'
+            'Alternately, a list of one or more YAML files that contain a list '
+            'of allowed directories.',
         defaultsTo: <String>[]);
+    argParser.addOption(_analysisSdk,
+        valueHelp: 'dart-sdk',
+        help: 'An optional path to a Dart SDK; this is used to override the '
+            'SDK used to provide analysis.');
   }
 
   static const String _customAnalysisFlag = 'custom-analysis';
+  static const String _analysisSdk = 'analysis-sdk';
+
+  late String _dartBinaryPath;
+
+  Set<String> _allowedCustomAnalysisDirectories = const <String>{};
 
   @override
   final String name = 'analyze';
 
   @override
-  final String description = 'Analyzes all packages using package:tuneup.\n\n'
-      'This command requires "pub" and "flutter" to be in your path.';
+  final String description = 'Analyzes all packages using dart analyze.\n\n'
+      'This command requires "dart" and "flutter" to be in your path.';
 
   @override
-  Future<Null> run() async {
-    checkSharding();
+  final bool hasLongOutput = false;
 
-    print('Verifying analysis settings...');
-    final List<FileSystemEntity> files = packagesDir.listSync(recursive: true);
+  /// Checks that there are no unexpected analysis_options.yaml files.
+  bool _hasUnexpecetdAnalysisOptions(RepositoryPackage package) {
+    final List<FileSystemEntity> files =
+        package.directory.listSync(recursive: true);
     for (final FileSystemEntity file in files) {
       if (file.basename != 'analysis_options.yaml' &&
           file.basename != '.analysis_options') {
         continue;
       }
 
-      final bool allowed = argResults[_customAnalysisFlag].any(
+      final bool allowed = _allowedCustomAnalysisDirectories.any(
           (String directory) =>
-              directory != null &&
               directory.isNotEmpty &&
-              p.isWithin(p.join(packagesDir.path, directory), file.path));
+              path.isWithin(
+                  packagesDir.childDirectory(directory).path, file.path));
       if (allowed) {
         continue;
       }
 
-      print('Found an extra analysis_options.yaml in ${file.absolute.path}.');
-      print(
-          'If this was deliberate, pass the package to the analyze command with the --$_customAnalysisFlag flag and try again.');
-      throw ToolExit(1);
+      printError(
+          'Found an extra analysis_options.yaml at ${file.absolute.path}.');
+      printError(
+          'If this was deliberate, pass the package to the analyze command '
+          'with the --$_customAnalysisFlag flag and try again.');
+      return true;
     }
+    return false;
+  }
 
-    print('Activating tuneup package...');
-    await processRunner.runAndStream(
-        'pub', <String>['global', 'activate', 'tuneup'],
-        workingDir: packagesDir, exitOnError: true);
+  @override
+  Future<void> initializeRun() async {
+    _allowedCustomAnalysisDirectories =
+        getStringListArg(_customAnalysisFlag).expand<String>((String item) {
+      if (item.endsWith('.yaml')) {
+        final File file = packagesDir.fileSystem.file(item);
+        final Object? yaml = loadYaml(file.readAsStringSync());
+        if (yaml == null) {
+          return <String>[];
+        }
+        return (yaml as YamlList).toList().cast<String>();
+      }
+      return <String>[item];
+    }).toSet();
 
-    await for (Directory package in getPackages()) {
-      if (isFlutterPackage(package, fileSystem)) {
-        await processRunner.runAndStream('flutter', <String>['packages', 'get'],
-            workingDir: package, exitOnError: true);
-      } else {
-        await processRunner.runAndStream('pub', <String>['get'],
-            workingDir: package, exitOnError: true);
+    // Use the Dart SDK override if one was passed in.
+    final String? dartSdk = argResults![_analysisSdk] as String?;
+    _dartBinaryPath =
+        dartSdk == null ? 'dart' : path.join(dartSdk, 'bin', 'dart');
+  }
+
+  @override
+  Future<PackageResult> runForPackage(RepositoryPackage package) async {
+    // Analysis runs over the package and all subpackages (unless only lib/ is
+    // being analyzed), so all of them need `flutter pub get` run before
+    // analyzing. `example` packages can be skipped since 'flutter packages get'
+    // automatically runs `pub get` in examples as part of handling the parent
+    // directory.
+    final List<RepositoryPackage> packagesToGet = <RepositoryPackage>[
+      package,
+      ...await getSubpackages(package).toList(),
+    ];
+    for (final RepositoryPackage packageToGet in packagesToGet) {
+      if (packageToGet.directory.basename != 'example' ||
+          !RepositoryPackage(packageToGet.directory.parent)
+              .pubspecFile
+              .existsSync()) {
+        if (!await _runPubCommand(packageToGet, 'get')) {
+          return PackageResult.fail(<String>['Unable to get dependencies']);
+        }
       }
     }
 
-    final List<String> failingPackages = <String>[];
-    await for (Directory package in getPlugins()) {
-      final int exitCode = await processRunner.runAndStream(
-          'pub', <String>['global', 'run', 'tuneup', 'check'],
-          workingDir: package);
-      if (exitCode != 0) {
-        failingPackages.add(p.basename(package.path));
-      }
+    if (_hasUnexpecetdAnalysisOptions(package)) {
+      return PackageResult.fail(<String>['Unexpected local analysis options']);
     }
-
-    print('\n\n');
-    if (failingPackages.isNotEmpty) {
-      print('The following packages have analyzer errors (see above):');
-      failingPackages.forEach((String package) {
-        print(' * $package');
-      });
-      throw ToolExit(1);
+    final int exitCode = await processRunner.runAndStream(
+        _dartBinaryPath, <String>['analyze', '--fatal-infos'],
+        workingDir: package.directory);
+    if (exitCode != 0) {
+      return PackageResult.fail();
     }
+    return PackageResult.success();
+  }
 
-    print('No analyzer errors found!');
+  Future<bool> _runPubCommand(RepositoryPackage package, String command) async {
+    final int exitCode = await processRunner.runAndStream(
+        flutterCommand, <String>['pub', command],
+        workingDir: package.directory);
+    return exitCode == 0;
   }
 }

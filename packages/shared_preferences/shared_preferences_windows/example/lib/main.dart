@@ -10,13 +10,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences_windows/shared_preferences_windows.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'SharedPreferences Demo',
       home: SharedPreferencesDemo(),
     );
@@ -24,18 +26,18 @@ class MyApp extends StatelessWidget {
 }
 
 class SharedPreferencesDemo extends StatefulWidget {
-  SharedPreferencesDemo({Key? key}) : super(key: key);
+  const SharedPreferencesDemo({Key? key}) : super(key: key);
 
   @override
   SharedPreferencesDemoState createState() => SharedPreferencesDemoState();
 }
 
 class SharedPreferencesDemoState extends State<SharedPreferencesDemo> {
-  final prefs = SharedPreferencesWindows.instance;
+  final SharedPreferencesWindows prefs = SharedPreferencesWindows();
   late Future<int> _counter;
 
   Future<void> _incrementCounter() async {
-    final values = await prefs.getAll();
+    final Map<String, Object> values = await prefs.getAll();
     final int counter = (values['counter'] as int? ?? 0) + 1;
 
     setState(() {
@@ -49,7 +51,7 @@ class SharedPreferencesDemoState extends State<SharedPreferencesDemo> {
   void initState() {
     super.initState();
     _counter = prefs.getAll().then((Map<String, Object> values) {
-      return (values['counter'] as int? ?? 0);
+      return values['counter'] as int? ?? 0;
     });
   }
 
@@ -57,16 +59,18 @@ class SharedPreferencesDemoState extends State<SharedPreferencesDemo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("SharedPreferences Demo"),
+        title: const Text('SharedPreferences Demo'),
       ),
       body: Center(
           child: FutureBuilder<int>(
               future: _counter,
               builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
                 switch (snapshot.connectionState) {
+                  case ConnectionState.none:
                   case ConnectionState.waiting:
                     return const CircularProgressIndicator();
-                  default:
+                  case ConnectionState.active:
+                  case ConnectionState.done:
                     if (snapshot.hasError) {
                       return Text('Error: ${snapshot.error}');
                     } else {

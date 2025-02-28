@@ -3,37 +3,45 @@
 // found in the LICENSE file.
 
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Screen that shows an example of openFiles
 class OpenImagePage extends StatelessWidget {
-  void _openImageFile(BuildContext context) async {
-    final XTypeGroup typeGroup = XTypeGroup(
+  /// Default Constructor
+  const OpenImagePage({Key? key}) : super(key: key);
+
+  Future<void> _openImageFile(BuildContext context) async {
+    // #docregion SingleOpen
+    const XTypeGroup typeGroup = XTypeGroup(
       label: 'images',
-      extensions: ['jpg', 'png'],
+      extensions: <String>['jpg', 'png'],
     );
-    final List<XFile> files = await openFiles(acceptedTypeGroups: [typeGroup]);
-    if (files.isEmpty) {
+    final XFile? file =
+        await openFile(acceptedTypeGroups: <XTypeGroup>[typeGroup]);
+    // #enddocregion SingleOpen
+    if (file == null) {
       // Operation was canceled by the user.
       return;
     }
-    final XFile file = files[0];
     final String fileName = file.name;
     final String filePath = file.path;
 
-    await showDialog(
-      context: context,
-      builder: (context) => ImageDisplay(fileName, filePath),
-    );
+    if (context.mounted) {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) => ImageDisplay(fileName, filePath),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Open an image"),
+        title: const Text('Open an image'),
       ),
       body: Center(
         child: Column(
@@ -41,10 +49,13 @@ class OpenImagePage extends StatelessWidget {
           children: <Widget>[
             ElevatedButton(
               style: ElevatedButton.styleFrom(
+                // TODO(darrenaustin): Migrate to new API once it lands in stable: https://github.com/flutter/flutter/issues/105724
+                // ignore: deprecated_member_use
                 primary: Colors.blue,
+                // ignore: deprecated_member_use
                 onPrimary: Colors.white,
               ),
-              child: Text('Press to open an image file(png, jpg)'),
+              child: const Text('Press to open an image file(png, jpg)'),
               onPressed: () => _openImageFile(context),
             ),
           ],
@@ -56,14 +67,15 @@ class OpenImagePage extends StatelessWidget {
 
 /// Widget that displays a text file in a dialog
 class ImageDisplay extends StatelessWidget {
+  /// Default Constructor
+  const ImageDisplay(this.fileName, this.filePath, {Key? key})
+      : super(key: key);
+
   /// Image's name
   final String fileName;
 
   /// Image's path
   final String filePath;
-
-  /// Default Constructor
-  ImageDisplay(this.fileName, this.filePath);
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +84,7 @@ class ImageDisplay extends StatelessWidget {
       // On web the filePath is a blob url
       // while on other platforms it is a system path.
       content: kIsWeb ? Image.network(filePath) : Image.file(File(filePath)),
-      actions: [
+      actions: <Widget>[
         TextButton(
           child: const Text('Close'),
           onPressed: () {

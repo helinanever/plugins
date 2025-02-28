@@ -1,3 +1,122 @@
+## 6.0.0
+
+* **Breaking change** for platform `web`:
+  * Endorses `google_sign_in_web: ^0.11.0` as the web implementation of the plugin.
+    * The web package is now backed by the **Google Identity Services (GIS) SDK**,
+    instead of the **Google Sign-In for Web JS SDK**, which is set to be deprecated
+    after March 31, 2023.
+    * Migration information can be found in the
+      [`google_sign_in_web` package README](https://pub.dev/packages/google_sign_in_web).
+
+For every platform other than `web`, this version should be identical to `5.4.4`.
+
+## 5.4.4
+
+* Adds documentation for iOS auth with SERVER_CLIENT_ID
+* Updates minimum Flutter version to 3.0.
+
+## 5.4.3
+
+* Updates code for stricter lint checks.
+
+## 5.4.2
+
+* Updates minimum Flutter version to 2.10.
+* Adds override for `GoogleSignInPlatform.initWithParams`.
+* Fixes tests to recognize new default `forceCodeForRefreshToken` request attribute.
+
+## 5.4.1
+
+* Fixes avoid_redundant_argument_values lint warnings and minor typos.
+
+## 5.4.0
+
+* Adds support for configuring `serverClientId` through `GoogleSignIn` constructor.
+* Adds support for Dart-based configuration as alternative to `GoogleService-Info.plist` for iOS.
+
+## 5.3.3
+
+* Updates references to the obsolete master branch.
+
+## 5.3.2
+
+* Enables mocking models by changing overridden operator == parameter type from `dynamic` to `Object`.
+* Updates tests to use a mock platform instead of relying on default
+  method channel implementation internals.
+* Removes example workaround to build for arm64 iOS simulators.
+
+## 5.3.1
+
+* Fixes library_private_types_in_public_api, sort_child_properties_last and use_key_in_widget_constructors
+  lint warnings.
+
+## 5.3.0
+
+* Moves Android and iOS implementations to federated packages.
+
+## 5.2.5
+
+* Migrates from `ui.hash*` to `Object.hash*`.
+* Adds OS version support information to README.
+
+## 5.2.4
+
+* Internal code cleanup for stricter analysis options.
+
+## 5.2.3
+
+* Bumps the Android dependency on `com.google.android.gms:play-services-auth` and therefore removes the need for `jetifier`.
+
+## 5.2.2
+
+* Updates Android compileSdkVersion to 31.
+* Removes dependency on `meta`.
+
+## 5.2.1
+
+ Change the placeholder of the GoogleUserCircleAvatar to a transparent image.
+
+## 5.2.0
+
+* Add `GoogleSignInAccount.serverAuthCode`. Mark `GoogleSignInAuthentication.serverAuthCode` as deprecated.
+
+## 5.1.1
+
+* Update minimum Flutter SDK to 2.5 and iOS deployment target to 9.0.
+
+## 5.1.0
+
+* Add reAuthenticate option to signInSilently to allow re-authentication to be requested
+
+* Updated Android lint settings.
+
+## 5.0.7
+
+* Mark iOS arm64 simulators as unsupported.
+
+## 5.0.6
+
+* Remove references to the Android V1 embedding.
+
+## 5.0.5
+
+* Add iOS unit and UI integration test targets.
+* Add iOS unit test module map.
+* Exclude arm64 simulators in example app.
+
+## 5.0.4
+
+* Migrate maven repo from jcenter to mavenCentral.
+
+## 5.0.3
+
+* Fixed links in `README.md`.
+* Added documentation for usage on the web.
+
+## 5.0.2
+
+* Fix flutter/flutter#48602 iOS flow shows account selection, if user is signed in to Google on the device.
+
 ## 5.0.1
 
 * Update platforms `init` function to prioritize `clientId` property when available;

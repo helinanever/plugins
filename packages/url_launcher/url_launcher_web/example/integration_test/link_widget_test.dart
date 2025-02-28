@@ -4,11 +4,13 @@
 
 import 'dart:html' as html;
 import 'dart:js_util';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_web/src/link.dart';
-import 'package:integration_test/integration_test.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,7 @@ void main() {
           uri: uri,
           target: LinkTarget.blank,
           builder: (BuildContext context, FollowLink? followLink) {
-            return Container(width: 100, height: 100);
+            return const SizedBox(width: 100, height: 100);
           },
         )),
       ));
@@ -41,7 +43,7 @@ void main() {
           uri: uri2,
           target: LinkTarget.self,
           builder: (BuildContext context, FollowLink? followLink) {
-            return Container(width: 100, height: 100);
+            return const SizedBox(width: 100, height: 100);
           },
         )),
       ));
@@ -49,6 +51,25 @@ void main() {
 
       // Check that the same anchor has been updated.
       expect(anchor.getAttribute('href'), uri2.toString());
+      expect(anchor.getAttribute('target'), '_self');
+
+      final Uri uri3 = Uri.parse('/foobar');
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: WebLinkDelegate(TestLinkInfo(
+          uri: uri3,
+          target: LinkTarget.self,
+          builder: (BuildContext context, FollowLink? followLink) {
+            return const SizedBox(width: 100, height: 100);
+          },
+        )),
+      ));
+      await tester.pumpAndSettle();
+
+      // Check that internal route properly prepares using the default
+      // [UrlStrategy]
+      expect(anchor.getAttribute('href'),
+          urlStrategy?.prepareExternalUrl(uri3.toString()));
       expect(anchor.getAttribute('target'), '_self');
     });
 
@@ -59,14 +80,14 @@ void main() {
         textDirection: TextDirection.ltr,
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints.tight(Size(100.0, 100.0)),
+            constraints: BoxConstraints.tight(const Size(100.0, 100.0)),
             child: WebLinkDelegate(TestLinkInfo(
               uri: uri,
               target: LinkTarget.blank,
               builder: (BuildContext context, FollowLink? followLink) {
                 return Container(
                   key: containerKey,
-                  child: SizedBox(width: 50.0, height: 50.0),
+                  child: const SizedBox(width: 50.0, height: 50.0),
                 );
               },
             )),
@@ -92,7 +113,7 @@ void main() {
           uri: null,
           target: LinkTarget.defaultTarget,
           builder: (BuildContext context, FollowLink? followLink) {
-            return Container(width: 100, height: 100);
+            return const SizedBox(width: 100, height: 100);
           },
         )),
       ));
@@ -101,6 +122,36 @@ void main() {
 
       final html.Element anchor = _findSingleAnchor();
       expect(anchor.hasAttribute('href'), false);
+    });
+
+    testWidgets('can be created and disposed', (WidgetTester tester) async {
+      final Uri uri = Uri.parse('http://foobar');
+      const int itemCount = 500;
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: MediaQuery(
+            data: const MediaQueryData(),
+            child: ListView.builder(
+              itemCount: itemCount,
+              itemBuilder: (_, int index) => WebLinkDelegate(TestLinkInfo(
+                uri: uri,
+                target: LinkTarget.defaultTarget,
+                builder: (BuildContext context, FollowLink? followLink) =>
+                    Text('#$index', textAlign: TextAlign.center),
+              )),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('#${itemCount - 1}'),
+        800,
+        maxScrolls: 1000,
+      );
     });
   });
 }
@@ -113,15 +164,13 @@ html.Element _findSingleAnchor() {
     }
   }
 
-  // Search inside platform views with shadow roots as well.
-  for (final html.Element platformView
-      in html.document.querySelectorAll('flt-platform-view')) {
-    final html.ShadowRoot shadowRoot = platformView.shadowRoot!;
-    if (shadowRoot != null) {
-      for (final html.Element anchor in shadowRoot.querySelectorAll('a')) {
-        if (hasProperty(anchor, linkViewIdProperty)) {
-          foundAnchors.add(anchor);
-        }
+  // Search inside the shadow DOM as well.
+  final html.ShadowRoot? shadowRoot =
+      html.document.querySelector('flt-glass-pane')?.shadowRoot;
+  if (shadowRoot != null) {
+    for (final html.Element anchor in shadowRoot.querySelectorAll('a')) {
+      if (hasProperty(anchor, linkViewIdProperty)) {
+        foundAnchors.add(anchor);
       }
     }
   }
@@ -130,6 +179,12 @@ html.Element _findSingleAnchor() {
 }
 
 class TestLinkInfo extends LinkInfo {
+  TestLinkInfo({
+    required this.uri,
+    required this.target,
+    required this.builder,
+  });
+
   @override
   final LinkWidgetBuilder builder;
 
@@ -141,10 +196,4 @@ class TestLinkInfo extends LinkInfo {
 
   @override
   bool get isDisabled => uri == null;
-
-  TestLinkInfo({
-    required this.uri,
-    required this.target,
-    required this.builder,
-  });
 }

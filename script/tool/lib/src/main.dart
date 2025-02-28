@@ -7,33 +7,28 @@ import 'dart:io' as io;
 import 'package:args/command_runner.dart';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
-import 'package:flutter_plugin_tools/src/publish_check_command.dart';
-import 'package:flutter_plugin_tools/src/publish_plugin_command.dart';
-import 'package:path/path.dart' as p;
 
 import 'analyze_command.dart';
-import 'build_examples_command.dart';
-import 'common.dart';
-import 'create_all_plugins_app_command.dart';
-import 'drive_examples_command.dart';
-import 'firebase_test_lab_command.dart';
-import 'format_command.dart';
-import 'java_test_command.dart';
-import 'license_check_command.dart';
-import 'lint_podspecs_command.dart';
-import 'list_command.dart';
-import 'test_command.dart';
-import 'version_check_command.dart';
-import 'xctest_command.dart';
+import 'common/core.dart';
 
 void main(List<String> args) {
-  final FileSystem fileSystem = const LocalFileSystem();
+  print('''
+*** WARNING ***
+This copy of the tooling is now only here as a shim for scripts in other
+repositories that have not yet been updated, and can only run 'analyze'. For
+full tooling in this repository, see the updated instructions:
+https://github.com/flutter/packages/blob/main/script/tool/README.md
+to switch to running the published version.
 
-  Directory packagesDir = fileSystem
-      .directory(p.join(fileSystem.currentDirectory.path, 'packages'));
+''');
+
+  const FileSystem fileSystem = LocalFileSystem();
+
+  Directory packagesDir =
+      fileSystem.currentDirectory.childDirectory('packages');
 
   if (!packagesDir.existsSync()) {
-    if (p.basename(fileSystem.currentDirectory.path) == 'packages') {
+    if (fileSystem.currentDirectory.basename == 'packages') {
       packagesDir = fileSystem.currentDirectory;
     } else {
       print('Error: Cannot find a "packages" sub-directory');
@@ -41,27 +36,20 @@ void main(List<String> args) {
     }
   }
 
-  final CommandRunner<Null> commandRunner = CommandRunner<Null>(
-      'pub global run flutter_plugin_tools',
+  final CommandRunner<void> commandRunner = CommandRunner<void>(
+      'dart pub global run flutter_plugin_tools',
       'Productivity utils for hosting multiple plugins within one repository.')
-    ..addCommand(AnalyzeCommand(packagesDir, fileSystem))
-    ..addCommand(BuildExamplesCommand(packagesDir, fileSystem))
-    ..addCommand(CreateAllPluginsAppCommand(packagesDir, fileSystem))
-    ..addCommand(DriveExamplesCommand(packagesDir, fileSystem))
-    ..addCommand(FirebaseTestLabCommand(packagesDir, fileSystem))
-    ..addCommand(FormatCommand(packagesDir, fileSystem))
-    ..addCommand(JavaTestCommand(packagesDir, fileSystem))
-    ..addCommand(LicenseCheckCommand(packagesDir, fileSystem))
-    ..addCommand(LintPodspecsCommand(packagesDir, fileSystem))
-    ..addCommand(ListCommand(packagesDir, fileSystem))
-    ..addCommand(PublishCheckCommand(packagesDir, fileSystem))
-    ..addCommand(PublishPluginCommand(packagesDir, fileSystem))
-    ..addCommand(TestCommand(packagesDir, fileSystem))
-    ..addCommand(VersionCheckCommand(packagesDir, fileSystem))
-    ..addCommand(XCTestCommand(packagesDir, fileSystem));
+    ..addCommand(AnalyzeCommand(packagesDir));
 
   commandRunner.run(args).catchError((Object e) {
-    final ToolExit toolExit = e;
-    io.exit(toolExit.exitCode);
+    final ToolExit toolExit = e as ToolExit;
+    int exitCode = toolExit.exitCode;
+    // This should never happen; this check is here to guarantee that a ToolExit
+    // never accidentally has code 0 thus causing CI to pass.
+    if (exitCode == 0) {
+      assert(false);
+      exitCode = 255;
+    }
+    io.exit(exitCode);
   }, test: (Object e) => e is ToolExit);
 }
